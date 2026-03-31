@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+
+# Nakama Server build
+server/build/
+
+# Client dist
+client/dist/
+
+# Other environment files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

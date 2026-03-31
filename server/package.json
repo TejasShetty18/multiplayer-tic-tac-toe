@@ -1,0 +1,16 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "Nakama Server Logic",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "esbuild modules/main.ts --bundle --outfile=build/index.js --platform=node"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "esbuild": "^0.27.4",
+    "rollup": "^4.14.0",
+    "typescript": "^5.4.5"
+  }
+}

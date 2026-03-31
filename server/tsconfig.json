@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "es2015",
+      "es2016",
+      "dom"
+    ],
+    "module": "esnext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/@heroiclabs"
+    ]
+  },
+  "include": [
+    "modules/**/*"
+  ]
+}
