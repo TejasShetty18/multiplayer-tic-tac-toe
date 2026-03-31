@@ -3,7 +3,9 @@ import { useGameStore } from '../store/gameStore';
 import { Board } from '../components/game/Board';
 import { User, Timer, Trophy } from 'lucide-react';
 export const Game: React.FC = () => {
-    const { userId, players, activePlayer, winner, state, timerSeconds, matchId } = useGameStore();
+    const { userId, displayName, opponentDisplayName, players, activePlayer, winner, state, timerSeconds, matchId } = useGameStore();
+
+    console.log("player", players);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -34,6 +36,9 @@ export const Game: React.FC = () => {
                     <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest flex items-center gap-1">
                         <User size={14} /> You
                     </span>
+                    <span className="font-bold text-sm text-white truncate max-w-[7rem]">
+                        {displayName || myPlayer?.username || 'Player'}
+                    </span>
                     <span className="font-mono text-xl text-emerald-400 font-bold">
                         {myPlayer?.mark}
                     </span>
@@ -56,9 +61,9 @@ export const Game: React.FC = () => {
                                 <Trophy size={16} /> Game Over
                             </span>
                             <span className="font-bold text-xl text-white">
-                                {winner === userId ? <span className="text-emerald-400">You Won!</span> : 
-                                 winner === 'DRAW' ? <span className="text-neutral-400">It's a Draw</span> : 
-                                 <span className="text-rose-500">You Lost</span>}
+                                {winner === userId ? <span className="text-emerald-400">You Won!</span> :
+                                    winner === 'DRAW' ? <span className="text-neutral-400">It's a Draw</span> :
+                                        <span className="text-rose-500">You Lost</span>}
                             </span>
                         </div>
                     )}
@@ -68,6 +73,9 @@ export const Game: React.FC = () => {
                 <div className="flex flex-col items-end space-y-1">
                     <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest flex items-center gap-1">
                         Opponent <User size={14} />
+                    </span>
+                    <span className="font-bold text-sm text-white truncate max-w-[7rem] text-right">
+                        {opponentDisplayName || opponentPlayer?.username || 'Waiting...'}
                     </span>
                     <span className="font-mono text-xl text-rose-400 font-bold">
                         {opponentPlayer?.mark || '?'}

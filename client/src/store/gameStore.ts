@@ -11,6 +11,8 @@ export interface Player {
 export interface GameState {
     userId: string | null;
     username: string | null;
+    displayName: string | null;
+    opponentDisplayName: string | null;
     matchId: string | null;
     board: (string | null)[];
     players: { [userId: string]: Player };
@@ -19,8 +21,12 @@ export interface GameState {
     deadline: number;
     state: 'waiting' | 'playing' | 'finished';
     timerSeconds: number;
+    isConnected: boolean;
     
     setSession: (userId: string, username: string) => void;
+    setDisplayName: (name: string) => void;
+    setOpponentDisplayName: (name: string) => void;
+    setIsConnected: (connected: boolean) => void;
     setMatch: (matchId: string) => void;
     handleMatchData: (data: MatchData) => void;
     handleDisconnect: () => void;
@@ -39,6 +45,8 @@ const OpCodes = {
 export const useGameStore = create<GameState>((set, get) => ({
     userId: null,
     username: null,
+    displayName: null,
+    opponentDisplayName: null,
     matchId: null,
     board: Array(9).fill(null),
     players: {},
@@ -47,8 +55,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     deadline: 0,
     state: 'waiting',
     timerSeconds: 30,
+    isConnected: false,
 
     setSession: (userId, username) => set({ userId, username }),
+
+    setDisplayName: (name) => set({ displayName: name }),
+
+    setOpponentDisplayName: (name) => set({ opponentDisplayName: name }),
+    
+    setIsConnected: (connected) => set({ isConnected: connected }),
     
     setMatch: (matchId) => set({ matchId }),
     
@@ -103,7 +118,8 @@ export const useGameStore = create<GameState>((set, get) => ({
              winner: null,
              deadline: 0,
              state: 'waiting',
-             timerSeconds: 30
+             timerSeconds: 30,
+             isConnected: true // we keep connection state on reset
          });
     }
 }));

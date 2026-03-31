@@ -1,33 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { nakamaClient } from '../services/nakama';
 
 export const Lobby: React.FC = () => {
-    const { userId, matchId } = useGameStore();
-    const [status, setStatus] = useState<string>('Connecting...');
+    const { userId, matchId, displayName } = useGameStore();
+    const [status, setStatus] = useState<string>('Connected as ' + (displayName || useGameStore.getState().username));
     const [isSearching, setIsSearching] = useState(false);
 
-    useEffect(() => {
-        const init = async () => {
-            try {
-                await nakamaClient.authenticate();
-                setStatus('Connected as ' + useGameStore.getState().username);
-            } catch (err) {
-                setStatus('Failed to connect to server');
-            }
-        };
-        init();
-    }, []);
+
 
     const handleFindMatch = async () => {
         setIsSearching(true);
         setStatus('Searching for opponent...');
         try {
-            await nakamaClient.findMatch();
+            await nakamaClient.findMatch(displayName || '');
 
             nakamaClient.onMatchmakerMatched(async (matched: any) => {
                 setStatus('Match found! Joining...');
-                console.log("Match found", matched);
+
+                // Extract opponent's display_name from matchmaker string_properties
+                const myUserId = useGameStore.getState().userId;
+                const opponentEntry = (matched.users || []).find(
+                    (u: any) => u.presence?.userId !== myUserId && u.presence?.user_id !== myUserId
+                );
+                const opponentName =
+                    opponentEntry?.string_properties?.display_name ||
+                    opponentEntry?.presence?.username ||
+                    'Opponent';
+                useGameStore.getState().setOpponentDisplayName(opponentName);
+
                 try {
                     const matchIdToJoin = matched.matchId || matched.match_id || matched.token;
                     const match = await nakamaClient.joinMatch(matchIdToJoin);

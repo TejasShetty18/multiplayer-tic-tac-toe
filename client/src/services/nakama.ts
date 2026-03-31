@@ -21,7 +21,7 @@ class NakamaService {
         };
     }
 
-    async authenticate() {
+    async authenticate(username: string) {
         if (this.session) return this.session;
 
         let deviceId = localStorage.getItem('nakama_device_id');
@@ -31,7 +31,7 @@ class NakamaService {
         }
 
         try {
-            const session = await this.client.authenticateDevice(deviceId, true);
+            const session = await this.client.authenticateDevice(deviceId, true, username);
             this.session = session;
             localStorage.setItem('nakama_token', session.token);
             
@@ -46,10 +46,10 @@ class NakamaService {
         }
     }
 
-    async findMatch() {
+    async findMatch(displayName: string) {
         if (!this.session) throw new Error("Not authenticated");
         
-        const ticket = await this.socket.addMatchmaker('*', 2, 2, {}, {});
+        const ticket = await this.socket.addMatchmaker('*', 2, 2, { display_name: displayName }, {});
         return ticket.ticket;
     }
 
