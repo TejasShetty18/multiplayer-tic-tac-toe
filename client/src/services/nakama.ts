@@ -34,11 +34,8 @@ class NakamaService {
             const session = await this.client.authenticateDevice(deviceId, true, username);
             this.session = session;
             localStorage.setItem('nakama_token', session.token);
-            
-            // Connect socket
             await this.socket.connect(session, true);
             useGameStore.getState().setSession(session.user_id || '', session.username || '');
-            
             return session;
         } catch (error) {
             console.error("Authentication failed:", error);
@@ -46,15 +43,14 @@ class NakamaService {
         }
     }
 
-    async findMatch(displayName: string, gameMode: 'classic' | 'timer' = 'classic') {
+    async findMatch(displayName: string, gameMode?: string) {
         if (!this.session) throw new Error("Not authenticated");
 
-        const query = `+properties.game_mode:${gameMode}`;
         const ticket = await this.socket.addMatchmaker(
-            query,
+            '*',
             2,
             2,
-            { display_name: displayName, game_mode: gameMode },
+            { display_name: displayName, game_mode: gameMode || 'classic' },
             {}
         );
         return ticket.ticket;
@@ -72,6 +68,27 @@ class NakamaService {
 
     async sendMove(matchId: string, position: number) {
         await this.socket.sendMatchState(matchId, 1, new TextEncoder().encode(JSON.stringify({ position })));
+    }
+
+    async saveDisplayName(displayName: string) {
+        if (!this.session) return;
+        try {
+            await this.client.rpc(this.session, 'save_display_name', { displayName });
+        } catch (e) {
+            console.warn('Failed to save display name:', e);
+        }
+    }
+
+    async getLeaderboard(): Promise<any[]> {
+        if (!this.session) return [];
+        try {
+            const result = await this.client.rpc(this.session, 'get_leaderboard', {});
+            const payload = result.payload as any;
+            return payload?.entries || [];
+        } catch (e) {
+            console.error('Failed to fetch leaderboard:', e);
+            return [];
+        }
     }
 }
 

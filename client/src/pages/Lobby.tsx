@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { nakamaClient } from '../services/nakama';
 import type { GameMode } from '../store/gameStore';
-import { Timer, Infinity as InfinityIcon, Swords, Zap } from 'lucide-react';
+import { Timer, Infinity as InfinityIcon, Swords, Zap, Trophy } from 'lucide-react';
 
 export const Lobby: React.FC = () => {
     const { userId, matchId, displayName, gameMode, setGameMode } = useGameStore();
@@ -193,6 +193,14 @@ export const Lobby: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Leaderboard button */}
+            <button
+                onClick={() => useGameStore.getState().setShowLeaderboard(true)}
+                className="mt-6 flex items-center gap-2 text-neutral-500 hover:text-amber-400 transition-colors duration-200 text-sm font-medium"
+            >
+                <Trophy size={16} /> View Global Leaderboard
+            </button>
 
             {/* Bottom hint */}
             <p className="mt-6 text-neutral-600 text-xs text-center max-w-xs">

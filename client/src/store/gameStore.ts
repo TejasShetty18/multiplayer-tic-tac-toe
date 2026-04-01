@@ -24,12 +24,14 @@ export interface GameState {
     state: 'waiting' | 'playing' | 'finished';
     timerSeconds: number;
     isConnected: boolean;
+    showLeaderboard: boolean;
     gameMode: GameMode;
 
     setSession: (userId: string, username: string) => void;
     setDisplayName: (name: string) => void;
     setOpponentDisplayName: (name: string) => void;
     setIsConnected: (connected: boolean) => void;
+    setShowLeaderboard: (show: boolean) => void;
     setMatch: (matchId: string) => void;
     setGameMode: (mode: GameMode) => void;
     handleMatchData: (data: MatchData) => void;
@@ -60,6 +62,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     state: 'waiting',
     timerSeconds: 30,
     isConnected: false,
+    showLeaderboard: false,
     gameMode: 'classic',
 
     setSession: (userId, username) => set({ userId, username }),
@@ -69,6 +72,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     setOpponentDisplayName: (name) => set({ opponentDisplayName: name }),
 
     setIsConnected: (connected) => set({ isConnected: connected }),
+
+    setShowLeaderboard: (show) => set({ showLeaderboard: show }),
 
     setMatch: (matchId) => set({ matchId }),
 

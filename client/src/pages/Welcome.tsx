@@ -30,6 +30,8 @@ export const Welcome: React.FC = () => {
         try {
             useGameStore.getState().setDisplayName(trimmedName);
             await nakamaClient.authenticate(trimmedName);
+            // Save display name on server non-blocking (for leaderboard)
+            nakamaClient.saveDisplayName(trimmedName).catch(() => {});
             useGameStore.getState().setIsConnected(true);
         } catch (err) {
             console.error('Connection error:', err);
