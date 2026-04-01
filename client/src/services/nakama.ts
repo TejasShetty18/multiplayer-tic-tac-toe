@@ -46,10 +46,17 @@ class NakamaService {
         }
     }
 
-    async findMatch(displayName: string) {
+    async findMatch(displayName: string, gameMode: 'classic' | 'timer' = 'classic') {
         if (!this.session) throw new Error("Not authenticated");
-        
-        const ticket = await this.socket.addMatchmaker('*', 2, 2, { display_name: displayName }, {});
+
+        const query = `+properties.game_mode:${gameMode}`;
+        const ticket = await this.socket.addMatchmaker(
+            query,
+            2,
+            2,
+            { display_name: displayName, game_mode: gameMode },
+            {}
+        );
         return ticket.ticket;
     }
 
