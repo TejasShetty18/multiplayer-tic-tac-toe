@@ -265,6 +265,14 @@ function getLeaderboard(ctx, logger, nk, payload) {
 }
 var InitModule = function (ctx, logger, nk, initializer) {
     logger.info('Initializing Tic-Tac-Toe Server Modules');
+    // Ensure the leaderboard exists
+    try {
+        nk.leaderboardCreate('ttt-wins', true, 'desc', 'incr', null, null);
+        logger.info('Leaderboard ttt-wins initialized successfully');
+    }
+    catch (e) {
+        logger.error("Failed to initialize leaderboard: ".concat(e));
+    }
     // Register Authoritative Match
     initializer.registerMatch('tic-tac-toe', {
         matchInit: matchInit,

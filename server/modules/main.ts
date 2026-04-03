@@ -64,6 +64,14 @@ const InitModule: nkruntime.InitModule = function (
 ) {
     logger.info('Initializing Tic-Tac-Toe Server Modules');
 
+    // Ensure the leaderboard exists
+    try {
+        (nk as any).leaderboardCreate('ttt-wins', true, 'desc', 'incr', null, null);
+        logger.info('Leaderboard ttt-wins initialized successfully');
+    } catch (e) {
+        logger.error(`Failed to initialize leaderboard: ${e}`);
+    }
+
     // Register Authoritative Match
     initializer.registerMatch('tic-tac-toe', {
         matchInit: matchInit,
