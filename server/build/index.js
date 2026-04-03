@@ -1,5 +1,5 @@
-'use strict';
-
+var module = typeof module !== "undefined" ? module : { exports: {} };
+var exports = typeof exports !== "undefined" ? exports : module.exports;
 var OpCodes = {
     MOVE: 1,
     REJECTED: 3,
