@@ -8,8 +8,5 @@ api.tejasshetty.site {
         respond "" 204
     }
 
-    header Access-Control-Allow-Origin "*"
-    header Access-Control-Expose-Headers "*"
-    
     reverse_proxy nakama:7350
 }
