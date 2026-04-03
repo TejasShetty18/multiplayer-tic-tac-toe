@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { Board } from '../components/game/Board';
-import { User, Timer, Trophy, Infinity as InfinityIcon } from 'lucide-react';
+import { User, Timer, Trophy, Infinity as InfinityIcon, LogOut } from 'lucide-react';
+import { nakamaClient } from '../services/nakama';
 
 export const Game: React.FC = () => {
     const {
         userId, displayName, opponentDisplayName,
         players, activePlayer, winner, state,
-        timerSeconds, matchId, gameMode,
+        timerSeconds, matchId, gameMode, gameOverReason
     } = useGameStore();
 
     console.log('player', players);
@@ -29,8 +30,27 @@ export const Game: React.FC = () => {
     const isMyTurn = activePlayer === userId;
     const isGameOver = state === 'finished';
 
-    const handleLeave = () => {
-        window.location.reload();
+    // Remaining player: opponent abandoned → auto re-queue after 3 s
+    useEffect(() => {
+        if (state === 'finished' && gameOverReason === 'abandoned') {
+            const t = setTimeout(() => {
+                useGameStore.getState().resetGame();
+                useGameStore.getState().setAutoSearch(true);
+            }, 3000);
+            return () => clearTimeout(t);
+        }
+    }, [state, gameOverReason]);
+
+    const handleBackToLobby = () => {
+        useGameStore.getState().resetGame();
+    };
+
+    const handleExplicitLeave = async () => {
+        if (matchId) {
+            await nakamaClient.leaveMatch(matchId);
+        }
+        useGameStore.getState().resetGame();
+        useGameStore.getState().setIsConnected(false);
     };
 
     const isTimerMode = gameMode === 'timer';
@@ -40,7 +60,7 @@ export const Game: React.FC = () => {
             {/* Player info / status bar */}
             <div className="w-full max-w-lg mb-8">
                 {/* Mode badge */}
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-between items-center mb-4 px-2">
                     <span
                         className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border ${
                             isTimerMode
@@ -51,6 +71,15 @@ export const Game: React.FC = () => {
                         {isTimerMode ? <Timer size={13} /> : <InfinityIcon size={13} />}
                         {isTimerMode ? 'Timer Mode' : 'Classic Mode'}
                     </span>
+
+                    {!isGameOver && (
+                        <button
+                            onClick={handleExplicitLeave}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-rose-400 hover:text-white hover:bg-rose-500 border border-rose-500/30 hover:border-rose-500 rounded-full transition-colors"
+                        >
+                            <LogOut size={13} /> Leave Match
+                        </button>
+                    )}
                 </div>
 
                 <div className="flex justify-between items-center bg-neutral-900 p-4 rounded-xl border border-neutral-800 shadow-xl">
@@ -106,7 +135,14 @@ export const Game: React.FC = () => {
                                     <Trophy size={16} /> Game Over
                                 </span>
                                 <span className="font-bold text-xl text-white">
-                                    {winner === userId ? (
+                                    {gameOverReason === 'abandoned' ? (
+                                        <span className="text-amber-400">
+                                            Match Abandoned
+                                            <span className="block text-xs text-neutral-400 font-normal mt-1">
+                                                Opponent left. Re-queuing in 3s...
+                                            </span>
+                                        </span>
+                                    ) : winner === userId ? (
                                         <span className="text-emerald-400">You Won!</span>
                                     ) : winner === 'DRAW' ? (
                                         <span className="text-neutral-400">It's a Draw</span>
@@ -135,10 +171,10 @@ export const Game: React.FC = () => {
 
             <Board matchId={matchId} isMyTurn={isMyTurn && !isGameOver} myMark={myPlayer?.mark} />
 
-            {isGameOver && (
+            {isGameOver && gameOverReason !== 'abandoned' && (
                 <div className="mt-12 flex justify-center">
                     <button
-                        onClick={handleLeave}
+                        onClick={handleBackToLobby}
                         className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition transform hover:scale-105 active:scale-95 uppercase tracking-widest"
                     >
                         Back to Lobby

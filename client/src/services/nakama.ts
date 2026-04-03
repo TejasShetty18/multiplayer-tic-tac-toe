@@ -24,11 +24,19 @@ class NakamaService {
     async authenticate(username: string) {
         if (this.session) return this.session;
 
+        // Key insight: if the submitted name differs from the stored name,
+        // the person sitting at this browser has changed → fresh identity.
+        const storedName = localStorage.getItem('nakama_display_name');
         let deviceId = localStorage.getItem('nakama_device_id');
-        if (!deviceId) {
+
+        if (!deviceId || storedName !== username) {
+            // New person or first visit — create a brand-new user account.
             deviceId = crypto.randomUUID();
             localStorage.setItem('nakama_device_id', deviceId);
+            localStorage.removeItem('nakama_token');
         }
+        // Persist the chosen name so we can detect changes next time.
+        localStorage.setItem('nakama_display_name', username);
 
         try {
             const session = await this.client.authenticateDevice(deviceId, true, username);
@@ -38,7 +46,7 @@ class NakamaService {
             useGameStore.getState().setSession(session.user_id || '', session.username || '');
             return session;
         } catch (error) {
-            console.error("Authentication failed:", error);
+            console.error('Authentication failed:', error);
             throw error;
         }
     }
@@ -64,6 +72,14 @@ class NakamaService {
         const match = await this.socket.joinMatch(matchId);
         useGameStore.getState().setMatch(match.match_id);
         return match;
+    }
+
+    async leaveMatch(matchId: string) {
+        try {
+            await this.socket.leaveMatch(matchId);
+        } catch (e) {
+            console.error('Failed to leave match:', e);
+        }
     }
 
     async sendMove(matchId: string, position: number) {

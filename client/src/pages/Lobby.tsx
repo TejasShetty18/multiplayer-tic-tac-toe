@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { nakamaClient } from '../services/nakama';
 import type { GameMode } from '../store/gameStore';
-import { Timer, Infinity as InfinityIcon, Swords, Zap, Trophy } from 'lucide-react';
+import { Timer, Infinity as InfinityIcon, Swords, Zap, Trophy, ArrowLeft } from 'lucide-react';
 
 export const Lobby: React.FC = () => {
-    const { userId, matchId, displayName, gameMode, setGameMode } = useGameStore();
+    const { userId, matchId, displayName, gameMode, setGameMode, autoSearch, setAutoSearch, setIsConnected } = useGameStore();
     const [status, setStatus] = useState<string>('');
     const [isSearching, setIsSearching] = useState(false);
 
@@ -44,6 +44,13 @@ export const Lobby: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (autoSearch && displayName && !isSearching) {
+            setAutoSearch(false);
+            handleFindMatch();
+        }
+    }, [autoSearch, displayName, isSearching]);
+
     const handleCancelSearch = () => {
         window.location.reload();
     };
@@ -67,6 +74,15 @@ export const Lobby: React.FC = () => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 text-white p-4">
+            {/* Back Button */}
+            <button
+                onClick={() => setIsConnected(false)}
+                disabled={isSearching}
+                className="absolute top-6 left-6 flex items-center gap-2 text-neutral-500 hover:text-teal-400
+                    transition-colors duration-200 text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+                <ArrowLeft size={18} /> Back
+            </button>
             {/* Header */}
             <div className="w-full max-w-md mb-8 text-center">
                 <div className="flex items-center justify-center gap-3 mb-2">

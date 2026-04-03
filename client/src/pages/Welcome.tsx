@@ -6,9 +6,12 @@ import { Button } from '../components/ui/button';
 import { User } from 'lucide-react';
 
 export const Welcome: React.FC = () => {
-    const [name, setName] = useState('');
+    // Pre-fill with the last-used name on this device (for returning players).
+    const storedName = localStorage.getItem('nakama_display_name') || '';
+    const [name, setName] = useState(storedName);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const isReturning = !!storedName;
 
     const handleConnect = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +53,10 @@ export const Welcome: React.FC = () => {
                     Neon Tic-Tac-Toe
                 </h1>
                 <p className="text-neutral-400 text-center mb-8 text-sm">
-                    Enter your display name to join the server
+                    {isReturning
+                        ? <><span className="text-emerald-400 font-semibold">{storedName}</span> — keep your name to resume your stats, or enter a new name to start fresh.</>  
+                        : 'Enter your display name to join the server'
+                    }
                 </p>
 
                 <form onSubmit={handleConnect} className="space-y-6">

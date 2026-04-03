@@ -26,12 +26,15 @@ export interface GameState {
     isConnected: boolean;
     showLeaderboard: boolean;
     gameMode: GameMode;
+    gameOverReason: string | null;
+    autoSearch: boolean;
 
     setSession: (userId: string, username: string) => void;
     setDisplayName: (name: string) => void;
     setOpponentDisplayName: (name: string) => void;
     setIsConnected: (connected: boolean) => void;
     setShowLeaderboard: (show: boolean) => void;
+    setAutoSearch: (search: boolean) => void;
     setMatch: (matchId: string) => void;
     setGameMode: (mode: GameMode) => void;
     handleMatchData: (data: MatchData) => void;
@@ -64,6 +67,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     isConnected: false,
     showLeaderboard: false,
     gameMode: 'classic',
+    gameOverReason: null,
+    autoSearch: false,
 
     setSession: (userId, username) => set({ userId, username }),
 
@@ -74,6 +79,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     setIsConnected: (connected) => set({ isConnected: connected }),
 
     setShowLeaderboard: (show) => set({ showLeaderboard: show }),
+
+    setAutoSearch: (search) => set({ autoSearch: search }),
 
     setMatch: (matchId) => set({ matchId }),
 
@@ -110,6 +117,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         } else if (data.op_code === OpCodes.GAME_OVER) {
             set(() => ({
                 winner: payload.winner,
+                gameOverReason: payload.reason,
                 state: 'finished',
             }));
         } else if (data.op_code === OpCodes.REJECTED) {
@@ -139,6 +147,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             state: 'waiting',
             timerSeconds: 30,
             isConnected: true,
+            gameOverReason: null,
         });
     },
 }));
