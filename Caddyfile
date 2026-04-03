@@ -1,0 +1,3 @@
+api.tejasshetty.site {
+    reverse_proxy nakama:7350
+}
