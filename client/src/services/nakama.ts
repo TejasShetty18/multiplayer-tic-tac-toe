@@ -21,35 +21,46 @@ class NakamaService {
         };
     }
 
-    async authenticate() {
+    async authenticate(username: string) {
         if (this.session) return this.session;
 
+        // Key insight: if the submitted name differs from the stored name,
+        // the person sitting at this browser has changed → fresh identity.
+        const storedName = localStorage.getItem('nakama_display_name');
         let deviceId = localStorage.getItem('nakama_device_id');
-        if (!deviceId) {
+
+        if (!deviceId || storedName !== username) {
+            // New person or first visit — create a brand-new user account.
             deviceId = crypto.randomUUID();
             localStorage.setItem('nakama_device_id', deviceId);
+            localStorage.removeItem('nakama_token');
         }
+        // Persist the chosen name so we can detect changes next time.
+        localStorage.setItem('nakama_display_name', username);
 
         try {
-            const session = await this.client.authenticateDevice(deviceId, true);
+            const session = await this.client.authenticateDevice(deviceId, true, username);
             this.session = session;
             localStorage.setItem('nakama_token', session.token);
-            
-            // Connect socket
             await this.socket.connect(session, true);
             useGameStore.getState().setSession(session.user_id || '', session.username || '');
-            
             return session;
         } catch (error) {
-            console.error("Authentication failed:", error);
+            console.error('Authentication failed:', error);
             throw error;
         }
     }
 
-    async findMatch() {
+    async findMatch(displayName: string, gameMode?: string) {
         if (!this.session) throw new Error("Not authenticated");
-        
-        const ticket = await this.socket.addMatchmaker('*', 2, 2, {}, {});
+
+        const ticket = await this.socket.addMatchmaker(
+            '*',
+            2,
+            2,
+            { display_name: displayName, game_mode: gameMode || 'classic' },
+            {}
+        );
         return ticket.ticket;
     }
 
@@ -63,8 +74,37 @@ class NakamaService {
         return match;
     }
 
+    async leaveMatch(matchId: string) {
+        try {
+            await this.socket.leaveMatch(matchId);
+        } catch (e) {
+            console.error('Failed to leave match:', e);
+        }
+    }
+
     async sendMove(matchId: string, position: number) {
         await this.socket.sendMatchState(matchId, 1, new TextEncoder().encode(JSON.stringify({ position })));
+    }
+
+    async saveDisplayName(displayName: string) {
+        if (!this.session) return;
+        try {
+            await this.client.rpc(this.session, 'save_display_name', { displayName });
+        } catch (e) {
+            console.warn('Failed to save display name:', e);
+        }
+    }
+
+    async getLeaderboard(): Promise<any[]> {
+        if (!this.session) return [];
+        try {
+            const result = await this.client.rpc(this.session, 'get_leaderboard', {});
+            const payload = result.payload as any;
+            return payload?.entries || [];
+        } catch (e) {
+            console.error('Failed to fetch leaderboard:', e);
+            return [];
+        }
     }
 }
 

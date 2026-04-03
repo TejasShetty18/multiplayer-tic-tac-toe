@@ -1,43 +1,50 @@
-version: '3'
 services:
   postgres:
+    image: postgres:12.2-alpine
     command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
     environment:
-      - POSTGRES_DB=nakama
-      - POSTGRES_PASSWORD=localdb
-    expose:
-      - "8080"
-      - "5432"
-    image: postgres:12.2-alpine
+      POSTGRES_DB: nakama
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdb
     ports:
       - "5432:5432"
-      - "8080:8080"
     volumes:
-      - data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nakama"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   nakama:
-    build: .
     image: heroiclabs/nakama:3.21.1
     entrypoint:
       - "/bin/sh"
       - "-ecx"
-      - >
-        /nakama/nakama migrate up --database.address postgres:localdb@postgres:5432/nakama &&
-        exec /nakama/nakama --name nakama1 --database.address postgres:localdb@postgres:5432/nakama --logger.level DEBUG --session.token_expiry_sec 7200 --metrics.prometheus_port 9100 --console.port 7351 --socket.server_key "defaultkey" --runtime.env "ENV=dev" --matchmaker.max_tickets 1
+      - "/nakama/nakama migrate up --database.address postgres:localdb@postgres:5432/nakama && exec /nakama/nakama --name nakama1 --database.address postgres:localdb@postgres:5432/nakama --logger.level DEBUG --session.token_expiry_sec 7200 --metrics.prometheus_port 9100 --console.port 7351 --socket.server_key defaultkey --runtime.env ENV=dev --matchmaker.max_tickets 1"
     depends_on:
-      - postgres
-    expose:
-      - "7349"
-      - "7350"
-      - "7351"
-      - "9100"
+      postgres:
+        condition: service_healthy
     ports:
       - "7349:7349"
       - "7350:7350"
       - "7351:7351"
     volumes:
       - ./server/build:/nakama/data/modules
-    restart: "no"
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  data:
+  pgdata:
