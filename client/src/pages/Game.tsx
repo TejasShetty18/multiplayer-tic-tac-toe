@@ -30,6 +30,9 @@ export const Game: React.FC = () => {
     const isMyTurn = activePlayer === userId;
     const isGameOver = state === 'finished';
 
+    console.log("ismyTuren:  ", isMyTurn);
+
+
     // Remaining player: opponent abandoned → auto re-queue after 3s
     useEffect(() => {
         if (state === 'finished' && gameOverReason === 'abandoned') {
@@ -67,11 +70,10 @@ export const Game: React.FC = () => {
                 {/* Mode badge */}
                 <div className="flex justify-between items-center mb-4 px-2">
                     <span
-                        className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border ${
-                            isTimerMode
-                                ? 'bg-amber-400/10 border-amber-400/30 text-amber-300'
-                                : 'bg-teal-400/10 border-teal-400/30 text-teal-300'
-                        }`}
+                        className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border ${isTimerMode
+                            ? 'bg-amber-400/10 border-amber-400/30 text-amber-300'
+                            : 'bg-teal-400/10 border-teal-400/30 text-teal-300'
+                            }`}
                     >
                         {isTimerMode ? <Timer size={13} /> : <InfinityIcon size={13} />}
                         {isTimerMode ? 'Timer Mode' : 'Classic Mode'}
@@ -106,9 +108,8 @@ export const Game: React.FC = () => {
                         {!isGameOver ? (
                             <div className="flex flex-col items-center gap-1">
                                 <span
-                                    className={`text-sm font-bold uppercase tracking-wider ${
-                                        isMyTurn ? 'text-emerald-400 animate-pulse' : 'text-rose-400'
-                                    }`}
+                                    className={`text-sm font-bold uppercase tracking-wider ${isMyTurn ? 'text-emerald-400 animate-pulse' : 'text-rose-400'
+                                        }`}
                                 >
                                     {isMyTurn ? 'Your Turn' : 'Opponent Turn'}
                                 </span>
@@ -116,11 +117,10 @@ export const Game: React.FC = () => {
                                 {/* Timer — only shown in timer mode */}
                                 {isTimerMode && (
                                     <span
-                                        className={`font-mono text-2xl font-bold flex items-center gap-2 ${
-                                            timerSeconds < 10
-                                                ? 'text-rose-500 animate-bounce'
-                                                : 'text-neutral-200'
-                                        }`}
+                                        className={`font-mono text-2xl font-bold flex items-center gap-2 ${timerSeconds < 10
+                                            ? 'text-rose-500 animate-bounce'
+                                            : 'text-neutral-200'
+                                            }`}
                                     >
                                         <Timer size={20} />
                                         {timerSeconds}s
