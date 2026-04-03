@@ -6,7 +6,8 @@ export const matchInit = function (
     nk: nkruntime.Nakama,
     params: { [key: string]: string }
 ): { state: nkruntime.MatchState, tickRate: number, label: string } {
-    logger.info('Match spawned');
+    const gameMode = (params['game_mode'] === 'timer') ? 'timer' : 'classic';
+    logger.info(`Match spawned with game_mode=${gameMode}`);
 
     const state: MatchState = {
         board: Array(9).fill(null),
@@ -15,13 +16,13 @@ export const matchInit = function (
         winner: null,
         deadline: 0,
         state: 'waiting',
-        gameMode: 'classic', // default; overwritten when match starts
+        gameMode,
     };
 
     return {
         state,
         tickRate: 1, // 1 tick per second is enough for tic-tac-toe
-        label: 'tic-tac-toe',
+        label: `tic-tac-toe-${gameMode}`,
     };
 };
 
@@ -70,31 +71,13 @@ export const matchJoin = function (
         gameState.state = 'playing';
         gameState.activePlayer = Object.keys(gameState.players).find(k => gameState.players[k].mark === 'X') || null;
 
-        // Determine game mode from the first player's presence metadata (string properties)
-        // The matchmaker sends game_mode as a string_property in the token.
-        // We fall back to 'classic' if it's missing.
-        const firstUserId = Object.keys(gameState.players)[0];
-        // We can't read string properties here directly, so we rely on a custom label set on match creation.
-        // For simplicity we embed the mode in the label parameter passed via the matchmaker token.
-        // Because Nakama matchmaker matched events include the token, we use the label stored during init.
-        // The client always passes game_mode in string_properties; we store it when the second player joins.
-        // Workaround: encode mode in match label — clients pass it as numeric property and we use 1=timer, 0=classic.
-        // Since we can't read string_properties in matchJoin, we default to 'timer' only when deadline was set.
-        // --- Simpler approach: always start with timer deadline; classic uses CLASSIC_DEADLINE_MS (0) ---
-        // The client reads gameMode from its own store, so server just needs consistent behaviour.
-        // For Classic: deadline = 0 (no timeout enforced on server).
-        // For Timer: deadline = now + 30s.
-        // We detect mode via the match label which we'll set when the match is created via the matchmaker params.
-        // Since we can't pass params through the matchmaker here, we read the stored gameMode field.
-        // On first join we don't know the mode yet; we keep it as 'classic' until we can detect it.
-        // The client already enforces this visually, so server-side we use a safe approach:
-        // - If gameMode on the state is 'timer', set a deadline.
-        // - Otherwise set deadline = 0 (no timeout).
-
+        // gameMode is already set correctly in matchInit from the matchmaker params.
+        // Classic: deadline = 0 (no server-side timeout).
+        // Timer:   deadline = now + 30s.
         if (gameState.gameMode === 'timer') {
             gameState.deadline = Date.now() + (TURN_TIMEOUT_SECONDS * 1000);
         } else {
-            gameState.deadline = CLASSIC_DEADLINE_MS; // 0 = no timeout
+            gameState.deadline = CLASSIC_DEADLINE_MS;
         }
 
         logger.info(`Game started. Mode=${gameState.gameMode} Deadline=${gameState.deadline}`);
@@ -124,6 +107,7 @@ export const matchLeave = function (
         }
         gameState.state = 'finished';
         dispatcher.broadcastMessage(OpCodes.GAME_OVER, JSON.stringify({ winner: gameState.winner, reason: 'disconnect' }));
+        recordMatchResult(nk, logger, gameState.players, gameState.winner);
     }
 
     return null; // Match is complete and can end
@@ -150,6 +134,7 @@ export const matchLoop = function (
         gameState.winner = opponent || null;
         gameState.state = 'finished';
         dispatcher.broadcastMessage(OpCodes.GAME_OVER, JSON.stringify({ winner: gameState.winner, reason: 'timeout' }));
+        recordMatchResult(nk, logger, gameState.players, gameState.winner);
         return null; // End match
     }
 
@@ -187,12 +172,14 @@ export const matchLoop = function (
                 gameState.state = 'finished';
                 dispatcher.broadcastMessage(OpCodes.SYNC, JSON.stringify(gameState));
                 dispatcher.broadcastMessage(OpCodes.GAME_OVER, JSON.stringify({ winner: gameState.winner, reason: 'win' }));
+                recordMatchResult(nk, logger, gameState.players, gameState.winner);
                 return null; // End match
             } else if (gameState.board.indexOf(null) === -1) {
                 gameState.winner = 'DRAW';
                 gameState.state = 'finished';
                 dispatcher.broadcastMessage(OpCodes.SYNC, JSON.stringify(gameState));
                 dispatcher.broadcastMessage(OpCodes.GAME_OVER, JSON.stringify({ winner: gameState.winner, reason: 'draw' }));
+                recordMatchResult(nk, logger, gameState.players, gameState.winner);
                 return null; // End match
             }
 
@@ -253,4 +240,58 @@ function checkWin(board: (string | null)[]): string | null {
         }
     }
     return null;
+}
+
+function recordMatchResult(nk: nkruntime.Nakama, logger: nkruntime.Logger, players: { [userId: string]: Player }, winner: string | null) {
+    for (const userId in players) {
+        let winScore = 0;
+        let lossInc = 0;
+        let drawInc = 0;
+
+        if (winner === 'DRAW') {
+             drawInc = 1;
+        } else if (winner === userId) {
+             winScore = 1;
+        } else if (winner !== null) {
+             lossInc = 1;
+        }
+
+        try {
+            let metadata: any = { losses: 0, draws: 0, currentStreak: 0, bestStreak: 0 };
+            try {
+                const records = nk.leaderboardRecordsList("ttt-wins", [userId], 1, null);
+                if (records && records.ownerRecords && records.ownerRecords.length > 0) {
+                    const currentMeta = records.ownerRecords[0].metadata || {};
+                    metadata.losses = currentMeta.losses || 0;
+                    metadata.draws = currentMeta.draws || 0;
+                    metadata.currentStreak = currentMeta.currentStreak || 0;
+                    metadata.bestStreak = currentMeta.bestStreak || 0;
+                }
+            } catch (err) {
+                 logger.error(`Could not fetch leaderboard for user ${userId}: ${err}`);
+            }
+
+            metadata.losses += lossInc;
+            metadata.draws += drawInc;
+
+            if (winScore > 0) {
+                metadata.currentStreak += 1;
+                metadata.bestStreak = Math.max(metadata.bestStreak, metadata.currentStreak);
+            } else if (lossInc > 0 || drawInc > 0) {
+                metadata.currentStreak = 0;
+            }
+
+            nk.leaderboardRecordWrite(
+                 "ttt-wins", 
+                 userId, 
+                 players[userId].username, 
+                 winScore, // adds 1 if win, 0 if loss/draw 
+                 0, 
+                 metadata
+             );
+             logger.info(`Recorded leaderboard stats for user ${userId}`);
+        } catch (e) {
+             logger.error(`Error writing leaderboard record for user ${userId}: ${e}`);
+        }
+    }
 }

@@ -10,23 +10,25 @@ class NakamaService {
     constructor() {
         this.client = new Client('defaultkey', 'localhost', '7350', this.useSSL);
         this.socket = this.client.createSocket(this.useSSL, false);
-        
+
         // Setup socket listeners
         this.socket.onmatchdata = (matchData: MatchData) => {
             useGameStore.getState().handleMatchData(matchData);
         };
-        
+
         this.socket.ondisconnect = () => {
-             useGameStore.getState().handleDisconnect();
+            useGameStore.getState().handleDisconnect();
         };
     }
 
     async authenticate(username: string) {
-        if (this.session) return this.session;
-
-        // Key insight: if the submitted name differs from the stored name,
-        // the person sitting at this browser has changed → fresh identity.
         const storedName = localStorage.getItem('nakama_display_name');
+        
+        // If we already have a session in memory AND the username hasn't changed, return it early.
+        if (this.session && storedName === username) {
+            return this.session;
+        }
+
         let deviceId = localStorage.getItem('nakama_device_id');
 
         if (!deviceId || storedName !== username) {
@@ -34,6 +36,7 @@ class NakamaService {
             deviceId = crypto.randomUUID();
             localStorage.setItem('nakama_device_id', deviceId);
             localStorage.removeItem('nakama_token');
+            this.session = null;
         }
         // Persist the chosen name so we can detect changes next time.
         localStorage.setItem('nakama_display_name', username);
@@ -54,11 +57,12 @@ class NakamaService {
     async findMatch(displayName: string, gameMode?: string) {
         if (!this.session) throw new Error("Not authenticated");
 
+        const mode = gameMode || 'classic';
         const ticket = await this.socket.addMatchmaker(
-            '*',
+            `+properties.game_mode:${mode}`,
             2,
             2,
-            { display_name: displayName, game_mode: gameMode || 'classic' },
+            { display_name: displayName, game_mode: mode },
             {}
         );
         return ticket.ticket;
@@ -99,8 +103,21 @@ class NakamaService {
         if (!this.session) return [];
         try {
             const result = await this.client.rpc(this.session, 'get_leaderboard', {});
-            const payload = result.payload as any;
-            return payload?.entries || [];
+            // result.payload may be returned as a JSON string from the Goja runtime depending on Nakama-JS version
+            const parsed = typeof result.payload === 'string' ? JSON.parse(result.payload) : (result.payload || { entries: [] });
+            const entries = parsed.entries || [];
+
+            // Map Nakama's raw leaderboard format to our frontend LeaderboardEntry interface
+            return entries.map((entry: any) => ({
+                rank: entry.rank || 0,
+                userId: entry.ownerId,
+                displayName: entry.username || 'Player',
+                wins: entry.score || 0,
+                losses: entry.metadata?.losses || 0,
+                draws: entry.metadata?.draws || 0,
+                bestStreak: entry.metadata?.bestStreak || 0,
+                currentStreak: entry.metadata?.currentStreak || 0
+            }));
         } catch (e) {
             console.error('Failed to fetch leaderboard:', e);
             return [];
