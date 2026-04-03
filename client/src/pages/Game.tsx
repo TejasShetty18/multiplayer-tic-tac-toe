@@ -7,7 +7,7 @@ import { nakamaClient } from '../services/nakama';
 export const Game: React.FC = () => {
     const {
         userId, displayName, opponentDisplayName,
-        players, activePlayer, winner, state,
+        players, activePlayer, state,
         timerSeconds, matchId, gameMode, gameOverReason
     } = useGameStore();
 
@@ -30,7 +30,7 @@ export const Game: React.FC = () => {
     const isMyTurn = activePlayer === userId;
     const isGameOver = state === 'finished';
 
-    // Remaining player: opponent abandoned → auto re-queue after 3 s
+    // Remaining player: opponent abandoned → auto re-queue after 3s
     useEffect(() => {
         if (state === 'finished' && gameOverReason === 'abandoned') {
             const t = setTimeout(() => {
@@ -41,9 +41,14 @@ export const Game: React.FC = () => {
         }
     }, [state, gameOverReason]);
 
-    const handleBackToLobby = () => {
-        useGameStore.getState().resetGame();
-    };
+    // Normal game over → navigate to Result page
+    useEffect(() => {
+        if (state === 'finished' && gameOverReason !== 'abandoned') {
+            useGameStore.getState().setShowResult(true);
+        }
+    }, [state, gameOverReason]);
+
+
 
     const handleExplicitLeave = async () => {
         if (matchId) {
@@ -134,22 +139,14 @@ export const Game: React.FC = () => {
                                 <span className="text-sm font-bold uppercase text-amber-400 flex items-center gap-1">
                                     <Trophy size={16} /> Game Over
                                 </span>
-                                <span className="font-bold text-xl text-white">
-                                    {gameOverReason === 'abandoned' ? (
-                                        <span className="text-amber-400">
-                                            Match Abandoned
-                                            <span className="block text-xs text-neutral-400 font-normal mt-1">
-                                                Opponent left. Re-queuing in 3s...
-                                            </span>
+                                {gameOverReason === 'abandoned' && (
+                                    <span className="text-amber-400 font-bold text-sm">
+                                        Match Abandoned
+                                        <span className="block text-xs text-neutral-400 font-normal mt-1">
+                                            Opponent left. Re-queuing in 3s...
                                         </span>
-                                    ) : winner === userId ? (
-                                        <span className="text-emerald-400">You Won!</span>
-                                    ) : winner === 'DRAW' ? (
-                                        <span className="text-neutral-400">It's a Draw</span>
-                                    ) : (
-                                        <span className="text-rose-500">You Lost</span>
-                                    )}
-                                </span>
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -171,16 +168,7 @@ export const Game: React.FC = () => {
 
             <Board matchId={matchId} isMyTurn={isMyTurn && !isGameOver} myMark={myPlayer?.mark} />
 
-            {isGameOver && gameOverReason !== 'abandoned' && (
-                <div className="mt-12 flex justify-center">
-                    <button
-                        onClick={handleBackToLobby}
-                        className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition transform hover:scale-105 active:scale-95 uppercase tracking-widest"
-                    >
-                        Back to Lobby
-                    </button>
-                </div>
-            )}
+
         </div>
     );
 };
