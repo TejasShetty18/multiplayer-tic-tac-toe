@@ -33,7 +33,7 @@ function saveDisplayName(
     if (!ctx.userId) throw new Error('Unauthenticated');
     const input = JSON.parse(payload);
     if (!input.displayName) throw new Error('Missing displayName');
-    
+
     nk.accountUpdateId(ctx.userId, null, input.displayName, null, null, null, null, null);
     logger.info(`Updated display name for user ${ctx.userId} to ${input.displayName}`);
     return JSON.stringify({ success: true });
@@ -85,7 +85,7 @@ const InitModule: nkruntime.InitModule = function (
 
     // Pass by reference so Nakama can extract the Identifier name.
     initializer.registerMatchmakerMatched(matchmakerMatched);
-    
+
     // Register the RPCs that the client calls
     initializer.registerRpc('save_display_name', saveDisplayName);
     initializer.registerRpc('get_leaderboard', getLeaderboard);
