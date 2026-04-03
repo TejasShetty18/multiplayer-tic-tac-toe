@@ -25,6 +25,7 @@ export interface GameState {
     timerSeconds: number;
     isConnected: boolean;
     showLeaderboard: boolean;
+    showResult: boolean;
     gameMode: GameMode;
     gameOverReason: string | null;
     autoSearch: boolean;
@@ -34,6 +35,7 @@ export interface GameState {
     setOpponentDisplayName: (name: string) => void;
     setIsConnected: (connected: boolean) => void;
     setShowLeaderboard: (show: boolean) => void;
+    setShowResult: (show: boolean) => void;
     setAutoSearch: (search: boolean) => void;
     setMatch: (matchId: string) => void;
     setGameMode: (mode: GameMode) => void;
@@ -66,6 +68,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     timerSeconds: 30,
     isConnected: false,
     showLeaderboard: false,
+    showResult: false,
     gameMode: 'classic',
     gameOverReason: null,
     autoSearch: false,
@@ -79,6 +82,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     setIsConnected: (connected) => set({ isConnected: connected }),
 
     setShowLeaderboard: (show) => set({ showLeaderboard: show }),
+
+    setShowResult: (show) => set({ showResult: show }),
 
     setAutoSearch: (search) => set({ autoSearch: search }),
 
@@ -148,6 +153,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             timerSeconds: 30,
             isConnected: true,
             gameOverReason: null,
+            showResult: false,
         });
     },
 }));
