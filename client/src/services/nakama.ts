@@ -8,7 +8,11 @@ class NakamaService {
     private useSSL = false;
 
     constructor() {
-        this.client = new Client('defaultkey', 'localhost', '7350', this.useSSL);
+        const host = import.meta.env.VITE_NAKAMA_HOST || 'localhost';
+        const port = import.meta.env.VITE_NAKAMA_PORT || '7350';
+        this.useSSL = import.meta.env.VITE_NAKAMA_USE_SSL === 'true';
+
+        this.client = new Client('defaultkey', host, port, this.useSSL);
         this.socket = this.client.createSocket(this.useSSL, false);
 
         // Setup socket listeners
