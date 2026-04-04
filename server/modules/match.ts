@@ -249,11 +249,11 @@ function recordMatchResult(nk: nkruntime.Nakama, logger: nkruntime.Logger, playe
         let drawInc = 0;
 
         if (winner === 'DRAW') {
-             drawInc = 1;
+            drawInc = 1;
         } else if (winner === userId) {
-             winScore = 1;
+            winScore = 1;
         } else if (winner !== null) {
-             lossInc = 1;
+            lossInc = 1;
         }
 
         try {
@@ -268,7 +268,7 @@ function recordMatchResult(nk: nkruntime.Nakama, logger: nkruntime.Logger, playe
                     metadata.bestStreak = currentMeta.bestStreak || 0;
                 }
             } catch (err) {
-                 logger.error(`Could not fetch leaderboard for user ${userId}: ${err}`);
+                logger.error(`Could not fetch leaderboard for user ${userId}: ${err}`);
             }
 
             metadata.losses += lossInc;
@@ -282,16 +282,16 @@ function recordMatchResult(nk: nkruntime.Nakama, logger: nkruntime.Logger, playe
             }
 
             nk.leaderboardRecordWrite(
-                 "ttt-wins", 
-                 userId, 
-                 players[userId].username, 
-                 winScore, // adds 1 if win, 0 if loss/draw 
-                 (lossInc > 0 || drawInc > 0) ? 1 : 0, 
-                 metadata
-             );
-             logger.info(`Recorded leaderboard stats for user ${userId}`);
+                "ttt-wins",
+                userId,
+                players[userId].username,
+                winScore, // adds 1 if win, 0 if loss/draw 
+                (lossInc > 0 || drawInc > 0) ? 1 : 0,
+                metadata
+            );
+            logger.info(`Recorded leaderboard stats for user ${userId}`);
         } catch (e) {
-             logger.error(`Error writing leaderboard record for user ${userId}: ${e}`);
+            logger.error(`Error writing leaderboard record for user ${userId}: ${e}`);
         }
     }
 }

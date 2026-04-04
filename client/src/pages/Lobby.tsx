@@ -143,11 +143,10 @@ export const Lobby: React.FC = () => {
                                         {/* Active badge */}
                                         {isActive && (
                                             <span
-                                                className={`absolute top-2 right-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                                                    mode.accent === 'teal'
-                                                        ? 'bg-teal-500/20 text-teal-300'
-                                                        : 'bg-amber-500/20 text-amber-300'
-                                                }`}
+                                                className={`absolute top-2 right-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${mode.accent === 'teal'
+                                                    ? 'bg-teal-500/20 text-teal-300'
+                                                    : 'bg-amber-500/20 text-amber-300'
+                                                    }`}
                                             >
                                                 Selected
                                             </span>

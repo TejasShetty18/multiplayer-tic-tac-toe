@@ -119,11 +119,10 @@ export const Leaderboard: React.FC = () => {
                             return (
                                 <div
                                     key={entry.userId}
-                                    className={`grid grid-cols-[3rem_1fr_5rem_5rem_5rem_6rem_5rem] px-4 py-4 border-b border-neutral-800/60 last:border-0 transition-colors ${
-                                        isMe
-                                            ? 'bg-emerald-950/40 border-l-2 border-l-emerald-500'
-                                            : 'bg-neutral-900/50 hover:bg-neutral-800/40'
-                                    }`}
+                                    className={`grid grid-cols-[3rem_1fr_5rem_5rem_5rem_6rem_5rem] px-4 py-4 border-b border-neutral-800/60 last:border-0 transition-colors ${isMe
+                                        ? 'bg-emerald-950/40 border-l-2 border-l-emerald-500'
+                                        : 'bg-neutral-900/50 hover:bg-neutral-800/40'
+                                        }`}
                                 >
                                     <div className="flex items-center">
                                         <RankBadge rank={entry.rank} />
