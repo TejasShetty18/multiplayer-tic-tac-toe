@@ -286,7 +286,7 @@ function recordMatchResult(nk: nkruntime.Nakama, logger: nkruntime.Logger, playe
                  userId, 
                  players[userId].username, 
                  winScore, // adds 1 if win, 0 if loss/draw 
-                 0, 
+                 (lossInc > 0 || drawInc > 0) ? 1 : 0, 
                  metadata
              );
              logger.info(`Recorded leaderboard stats for user ${userId}`);

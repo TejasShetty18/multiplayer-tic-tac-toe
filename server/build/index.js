@@ -216,7 +216,7 @@ function recordMatchResult(nk, logger, players, winner) {
                 metadata.currentStreak = 0;
             }
             nk.leaderboardRecordWrite("ttt-wins", userId, players[userId].username, winScore, // adds 1 if win, 0 if loss/draw 
-            0, metadata);
+            (lossInc > 0 || drawInc > 0) ? 1 : 0, metadata);
             logger.info("Recorded leaderboard stats for user ".concat(userId));
         }
         catch (e) {

@@ -82,7 +82,7 @@ export const Leaderboard: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="w-full max-w-3xl">
+            <div className="w-full max-w-3xl overflow-x-auto pb-4">
                 {loading ? (
                     <div className="flex flex-col items-center py-20 text-neutral-500">
                         <RefreshCw size={32} className="animate-spin mb-4 text-emerald-500" />
@@ -97,7 +97,7 @@ export const Leaderboard: React.FC = () => {
                         <p className="text-sm mt-1">Play your first game to appear on the board!</p>
                     </div>
                 ) : (
-                    <div className="rounded-2xl border border-neutral-800 overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+                    <div className="min-w-[600px] rounded-2xl border border-neutral-800 overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                         {/* Table Header */}
                         <div className="grid grid-cols-[3rem_1fr_5rem_5rem_5rem_6rem_5rem] bg-neutral-900 border-b border-neutral-800 px-4 py-3 text-xs uppercase tracking-widest text-neutral-500 font-bold">
                             <div>Rank</div>
